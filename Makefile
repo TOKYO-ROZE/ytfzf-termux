@@ -1,13 +1,9 @@
 PROG=ytfzf
 
 UNAME := $(shell uname)
-ifeq ($(UNAME), Darwin)
-    PREFIX = /usr/local/bin
-endif
-ifeq ($(UNAME), Linux)
-    PREFIX = /usr/bin
-endif
 
+PREFIX = $(HOME)/.local/bin
+	
 install:
 	chmod 755 $(PROG)
 	mkdir -p ${DESTDIR}${PREFIX}
