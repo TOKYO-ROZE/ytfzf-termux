@@ -20,7 +20,7 @@ printf "" > "$tmp_video_data_file"
 [ -e "$config_file" ] && . "$config_file"
 
 #for each environment variable, check if it's set in environment,
-    #if set in environment, use that value
+    #if set in environment, use that vaalue
     #otherwise use the variable set in config, if that's not set, use the default value
 
 #enable/disable history
@@ -113,7 +113,7 @@ auto_caption=${auto_caption-0}
 # misc
 tab_space=$(printf '\t')
 
-#ueberzug related variables
+#eeberzug related variables
 #the side where thumbnails are shown
 #needs to be exported because ueberzug spawns subprocesses
 [ -z "$PREVIEW_SIDE" ] && export PREVIEW_SIDE=${preview_side-left}
@@ -192,7 +192,7 @@ Usage: ytfzf [OPTIONS...] <search-query>;
      -d, --download       <search-query>    Download to current directory
      -f                   <search-query>    Show available formats before proceeding
      -a, --auto-select    <search-query>    Auto play the first result, no selector
-     -r  --random-select  <search-query>    Auto play a random result, no selector
+     -r  --random-select  <search-query>    Auto play a random result,eno selector
      -A, --select-all     <search-query>    Selects all results
      -n, --link-count=    <link-count>      To specify number of videos to select with -a, -r
      -l, --loop           <search-query>    Loop: prompt selector again after video ends
@@ -409,15 +409,7 @@ FIFO="/tmp/ytfzf-ueberzug-fifo-$PROC_ID"
 ID="ytfzf-ueberzug"
 WIDTH=$FZF_PREVIEW_COLUMNS
 HEIGHT=$FZF_PREVIEW_LINES
-start_ueberzug () {
-    [ -e $FIFO ] || { mkfifo "$FIFO" || exit 1 ; }
-    ueberzug layer --parser json --silent < "$FIFO" &
-    exec 3>"$FIFO"
-}
-stop_ueberzug () {
-    exec 3>&-
-    rm "$FIFO" > /dev/null 2>&1
-}
+
 
 preview_img () {
 
@@ -741,15 +733,13 @@ user_selection () {
 		selected_data=$(printf "%s\n" "$videos_data_clean" | shuf -n "$link_count" )
 	#show thumbnail menu
 	elif [ "$show_thumbnails" -eq 1 ] ; then
-		dep_ck "ueberzug" "fzf"
-		start_ueberzug
+		dep_ck "fzf"
 		#thumbnails only work in fzf, use fzf
 		menu_command="fzf -m --tabstop=1 --bind change:top --delimiter=\"$tab_space\" \
 		--nth=1,2 $FZF_DEFAULT_OPTS \
 		--layout=reverse --preview \"sh $0 -U {}\" \
         	--preview-window \"$PREVIEW_SIDE:50%:noborder:wrap\""
 		selected_data=$( title_len=200 video_menu "$videos_data" )
-		stop_ueberzug
 		# Deletes thumbnails if no video is selected
 		[ -z "$selected_data" ] && delete_thumbnails
 	#show regular menu
