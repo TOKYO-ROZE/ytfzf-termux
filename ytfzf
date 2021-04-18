@@ -178,7 +178,7 @@ Usage: ytfzf [OPTIONS...] <search-query>;
      -h, --help                             Show this help text;
      -v, --version                          -v for ytfzf's version;
                                             --version for ytfzf + dependency's versions
-     -i, --info-video						Show infomation side bar 
+     -i, --info-video			    Show infomation side bar 
      -N, --notification                     Send notification when playing video
                                             Doesn't work with -H -D
      --thumbnail-quality=<0,1>              0: low quality (faster), 1: default
