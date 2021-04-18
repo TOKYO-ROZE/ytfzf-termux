@@ -20,7 +20,7 @@ printf "" > "$tmp_video_data_file"
 [ -e "$config_file" ] && . "$config_file"
 
 #for each environment variable, check if it's set in environment,
-    #if set in environment, use that vaalue
+    #if set in environment, use that value
     #otherwise use the variable set in config, if that's not set, use the default value
 
 #enable/disable history
@@ -82,7 +82,7 @@ useragent=${useragent-'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML
 #use $YTFZF_EXT_MENU (same as -D)
 is_ext_menu=${is_ext_menu-0}
 #show thumbnails (same as -t)
-show_thumbnails=${show_thumbnails-0}
+show_info=${show_info-0}
 # 0: better thumbnails (slower), 1: low res thumbnails (faster)
 thumbnail_quality=${thumbnail_quality-1}
 #auto select the first video (same as -a)
@@ -113,7 +113,7 @@ auto_caption=${auto_caption-0}
 # misc
 tab_space=$(printf '\t')
 
-#eeberzug related variables
+#ueberzug related variables
 #the side where thumbnails are shown
 #needs to be exported because ueberzug spawns subprocesses
 [ -z "$PREVIEW_SIDE" ] && export PREVIEW_SIDE=${preview_side-left}
@@ -181,7 +181,7 @@ Usage: ytfzf [OPTIONS...] <search-query>;
      -h, --help                             Show this help text;
      -v, --version                          -v for ytfzf's version;
                                             --version for ytfzf + dependency's versions
-     -t, --show-thumbnails                  Show thumbnails (requires ueberzug)
+     -i, --info-video						XXXXXXXXXXXXXXXXXXXXXXXXXXXx
      -N, --notification                     Send notification when playing video
                                             Doesn't work with -H -D
      --thumbnail-quality=<0,1>              0: low quality (faster), 1: default
@@ -192,7 +192,7 @@ Usage: ytfzf [OPTIONS...] <search-query>;
      -d, --download       <search-query>    Download to current directory
      -f                   <search-query>    Show available formats before proceeding
      -a, --auto-select    <search-query>    Auto play the first result, no selector
-     -r  --random-select  <search-query>    Auto play a random result,eno selector
+     -r  --random-select  <search-query>    Auto play a random result, no selector
      -A, --select-all     <search-query>    Selects all results
      -n, --link-count=    <link-count>      To specify number of videos to select with -a, -r
      -l, --loop           <search-query>    Loop: prompt selector again after video ends
@@ -409,7 +409,15 @@ FIFO="/tmp/ytfzf-ueberzug-fifo-$PROC_ID"
 ID="ytfzf-ueberzug"
 WIDTH=$FZF_PREVIEW_COLUMNS
 HEIGHT=$FZF_PREVIEW_LINES
-
+start_ueberzug () {
+    [ -e $FIFO ] || { mkfifo "$FIFO" || exit 1 ; }
+    ueberzug layer --parser json --silent < "$FIFO" &
+    exec 3>"$FIFO"
+}
+stop_ueberzug () {
+    exec 3>&-
+    rm "$FIFO" > /dev/null 2>&1
+}
 
 preview_img () {
 
@@ -473,34 +481,7 @@ video_menu () {
 #         Scraping         #
 ############################
 
-download_thumbnails () {
-       #scrapes the urls of the thumbnails of the videos from the adjusted json
-	if [ "$thumbnail_quality" -eq 1 ]; then
-		image_download () {
-			# higher quality images
-			curl -s "$Url" -G --data-urlencode "sqp=" > "$thumb_dir/$Name.png"
-		}
-	else
-		image_download () {
- 			curl -s "$Url"  > "$thumb_dir/$Name.png"
-		}
-	fi
 
-	[ "$show_link_only" -eq 0 ] && printf "Downloading Thumbnails...\n"
-	thumb_urls=$(printf "%s" "$*" |\
-		jq  -r '.[]|[.thumbs,.videoID]|@tsv' )
-
-	while IFS=$tab_space read -r Url Name; do
-		sleep 0.001
-		{
-			image_download
-		} &
-	done <<-EOF
-	$thumb_urls
-	EOF
-	unset Name Url thumb_urls
-	unset -f image_download
-}
 
 get_sp_filter () {
 
@@ -640,7 +621,7 @@ scrape_channel () {
 		printf "%s\n" "$videos_data" >> "$tmp_video_data_file"
 	fi
 
-	[ $show_thumbnails -eq 1 ] && download_thumbnails "$videos_json"
+	[ $show_info -eq 1 ] && download_thumbnails "$videos_json"
 	unset channel_url channel_name yt_html yt_json  videos_json
 }
 scrape_yt () {
@@ -692,7 +673,7 @@ scrape_yt () {
 	[ -z "$videos_data" ] &&  { printf "No results found. Try different keywords.\n"; exit 1;}
 	printf "%s\n" "$videos_data" >> "$tmp_video_data_file"
 
-	[ $show_thumbnails -eq 1 ] && download_thumbnails "$videos_json"
+	[ $show_info -eq 1 ] && download_thumbnails "$videos_json"
 	# wait for thumbnails to download
 	wait
 	unset videos_json yt_json yt_html
@@ -733,13 +714,15 @@ user_selection () {
 		selected_data=$(printf "%s\n" "$videos_data_clean" | shuf -n "$link_count" )
 	#show thumbnail menu
 	elif [ "$show_thumbnails" -eq 1 ] ; then
-		dep_ck "fzf"
+		dep_ck "ueberzug" "fzf"
+		start_ueberzug
 		#thumbnails only work in fzf, use fzf
 		menu_command="fzf -m --tabstop=1 --bind change:top --delimiter=\"$tab_space\" \
 		--nth=1,2 $FZF_DEFAULT_OPTS \
 		--layout=reverse --preview \"sh $0 -U {}\" \
         	--preview-window \"$PREVIEW_SIDE:50%:noborder:wrap\""
 		selected_data=$( title_len=200 video_menu "$videos_data" )
+		stop_ueberzug
 		# Deletes thumbnails if no video is selected
 		[ -z "$selected_data" ] && delete_thumbnails
 	#show regular menu
@@ -984,12 +967,12 @@ parse_long_opt () {
 		    [ "$opt" = 'loop' ] && parse_opt "l" || parse_opt "l" "${opt#*=}"
 		    is_non_number "$YTFZF_LOOP" && bad_opt_arg "--loop=" "$YTFZF_LOOP" ;;
 
-		show-thumbnails|show-thumbnails=*)
-		    [ "$opt" = 'show-thumbnails' ] && parse_opt "t" || parse_opt "t" "${opt#*=}"
+		info-video|info-video=*)
+		    [ "$opt" = 'info-video' ] && parse_opt "i" || parse_opt "i" "${opt#*=}"
 		    is_non_number "$show_thumbnails" && bad_opt_arg "--thumbnails=" "$show_thumbnails" ;;
 
 		thumbnail-quality=*)
-			parse_opt "t"
+			parse_opt "i"
 			thumbnail_quality=${opt#*=}
 			is_non_number "$thumbnail_quality" && bad_opt_arg "--thumbnail-quality=" "$thumbnail_quality" ;;
 
@@ -1094,7 +1077,7 @@ parse_opt () {
 
 		l) 	YTFZF_LOOP=${optarg:-1} ;;
 
-		t) 	show_thumbnails=${optarg:-1} ;;
+		i) 	show_thumbnails=${optarg:-1} ;;
 
 		v)	printf "ytfzf: %s\n" "$YTFZF_VERSION"
 			exit ;;
@@ -1119,7 +1102,7 @@ parse_opt () {
 	unset opt optarg
 }
 
-while getopts "LhDmdfxHaArltSsvNn:U:-:" OPT; do
+while getopts "LhDmdfxHaAritSsvNn:U:-:" OPT; do
     parse_opt "$OPT" "$OPTARG"
 done
 shift $((OPTIND-1))
