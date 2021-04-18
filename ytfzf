@@ -113,9 +113,6 @@ auto_caption=${auto_caption-0}
 # misc
 tab_space=$(printf '\t')
 
-#ueberzug related variables
-#the side where thumbnails are shown
-#needs to be exported because ueberzug spawns subprocesses
 [ -z "$PREVIEW_SIDE" ] && export PREVIEW_SIDE=${preview_side-left}
 
 #variable used for when this process spawns subprocesses and there needs to be a unique value (ueberzug)
@@ -403,22 +400,6 @@ FIFO="/tmp/ytfzf-ueberzug-fifo-$PROC_ID"
 ID="ytfzf-ueberzug"
 WIDTH=$FZF_PREVIEW_COLUMNS
 HEIGHT=$FZF_PREVIEW_LINES
-start_ueberzug () {
-    [ -e $FIFO ] || { mkfifo "$FIFO" || exit 1 ; }
-    ueberzug layer --parser json --silent < "$FIFO" &
-    exec 3>"$FIFO"
-}
-stop_ueberzug () {
-    exec 3>&-
-    rm "$FIFO" > /dev/null 2>&1
-}
-
-preview_img () {
-
-	# remove trailing spaces from each field and separate them with just a tab
-	preview_data=$( printf '%s' "$*" | sed "s/ *$tab_space|/$tab_space/g" )
-
-	IFS=$tab_space read -r title channel duration views date shorturl << EOF
 $preview_data
 EOF
 
@@ -708,15 +689,13 @@ user_selection () {
 		selected_data=$(printf "%s\n" "$videos_data_clean" | shuf -n "$link_count" )
 	#show thumbnail menu
 	elif [ "$show_thumbnails" -eq 1 ] ; then
-		dep_ck "ueberzug" "fzf"
-		start_ueberzug
+		dep_ck "fzf"
 		#thumbnails only work in fzf, use fzf
 		menu_command="fzf -m --tabstop=1 --bind change:top --delimiter=\"$tab_space\" \
 		--nth=1,2 $FZF_DEFAULT_OPTS \
 		--layout=reverse --preview \"sh $0 -U {}\" \
         	--preview-window \"$PREVIEW_SIDE:50%:noborder:wrap\""
 		selected_data=$( title_len=200 video_menu "$videos_data" )
-		stop_ueberzug
 		# Deletes thumbnails if no video is selected
 		[ -z "$selected_data" ] && delete_thumbnails
 	#show regular menu
