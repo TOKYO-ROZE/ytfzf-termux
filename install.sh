@@ -6,9 +6,9 @@ run_run() {
     termux_bin="/data/data/com.termux/files/usr/bin/"
     cp ./ytfzf $termux_bin 1> /dev/null
     if type ytfzf 1> /dev/null; then
-        printf "finish to installing. Gam3 3e7. \n"
+        printf "[*] finish to installing. Gam3 3e7. \n"
     else
-        printf "Could not install. 9am3 0ver. \n"
+        printf "[!] Could not install. 9am3 0ver. \n"
     fi
 }
 run_run
