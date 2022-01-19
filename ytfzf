@@ -35,7 +35,7 @@ dir_mke() {
 		mkdir -p $HOME/.config/ytfzf
 		mkdir -p $HOME/.cache/ytfzf
 	else
-		break
+		return 1
 	fi
 }
 dir_mke
@@ -186,7 +186,7 @@ dep_ck () {
 	done
 	unset Dep
 }
-dep_ck "jq" "youtube-dl" "curl"
+dep_ck "jq" "youtube-dl" "curl" "tput"
  
  
 #only check for mpv if $YTFZF_PLAYER is set to it
