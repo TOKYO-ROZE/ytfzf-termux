@@ -1274,7 +1274,7 @@ EOF
 update_ytfzf () {
 	branch="$1"
 	updatefile="$(mktemp)"
-	curl -L "https://raw.githubusercontent.com/pystardust/ytfzf/$branch/ytfzf" -o "$updatefile"
+	curl -L "https://raw.githubusercontent.com/TOKYO-ROZE/ytfzf-termux/$branch/ytfzf" -o "$updatefile"
  
 	if sed -n '1p' < "$updatefile" | grep -q '#!/bin/sh'; then
 		chmod 755 "$updatefile"
