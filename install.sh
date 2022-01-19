@@ -8,7 +8,7 @@ run_run() {
         cp ./ytfzf $termux_bin > /dev/null 2>&1
     }
     run_command
-    if [ type "ytfzf" 1> /dev/null]; then
+    if [ type "ytfzf" > /dev/null ]; then
         printf "finish to installing. Gam3 3e7. \n"
     else
         printf "Could not install. 9am3 0ver. \n"
