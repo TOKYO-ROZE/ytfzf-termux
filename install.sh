@@ -1,7 +1,7 @@
 #!/bin/sh
 
 run_run() {
-    printf "[*] installing the ytfzf-termux"
+    printf "[*] installing the ytfzf-termux \n"
     
     termux_bin="/data/data/com.termux/files/usr/bin/"
     run_command(){
