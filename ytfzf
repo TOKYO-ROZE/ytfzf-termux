@@ -30,9 +30,10 @@ tmp_video_json_file="/tmp/ytfzf-subjson"
 #for each environment variable, check if it's set in environment,
     #if set in environment, use that value
     #otherwise use the variable set in config, if that's not set, use the default value
-dir_mke(){
-	if[! -d $HOME/.config/ytfzf];then
+dir_mke() {
+	if [! -d $HOME/.config/ytfzf]; then
 		mkdir -p $HOME/.config/ytfzf
+		mkdir -p $HOME/.cache/ytfzf
 	else
 		break
 	fi
